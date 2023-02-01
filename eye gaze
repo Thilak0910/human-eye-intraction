@@ -1,0 +1,70 @@
+import cv2
+import numpy as np
+import pyautogui
+
+# Load the Haar cascade classifier for face detection
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+
+# Load the Haar cascade classifier for eye detection
+eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
+
+# Load the video capture object
+cap = cv2.VideoCapture(0)
+
+# Define the nose position and click variables
+nose_x = None
+nose_y = None
+left_click = False
+right_click = False
+
+while True:
+    # Capture a frame from the video
+    ret, frame = cap.read()
+
+    # Convert the frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Detect faces in the frame
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+
+    for (x, y, w, h) in faces:
+        # Draw a rectangle around the face
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        roi_gray = gray[y:y + h, x:x + w]
+        roi_color = frame[y:y + h, x:x + w]
+
+        # Detect eyes in the face region
+        eyes = eye_cascade.detectMultiScale(roi_gray)
+
+        for (ex, ey, ew, eh) in eyes:
+            # Draw a rectangle around the eyes
+            cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+
+        # Detect the nose in the face region
+        nose = cv2.dlib.get_frontal_face_detector()
+        dets = nose(roi_gray, 1)
+        for det in dets:
+            # Get the nose position
+            nose_x = x + det.left() + int(det.width() / 2)
+            nose_y = y + det.top() + int(det.height() / 2)
+
+            # Draw a circle around the nose
+            cv2.circle(roi_color, (nose_x, nose_y), 3, (0, 0, 255), -1)
+
+    # Display the frame
+    cv2.imshow('frame', frame)
+
+    # Check if the left eye is closed
+    if len(eyes) == 2 and eyes[0][2] < 20 and eyes[1][2] < 20:
+        left_click = True
+    else:
+        left_click = False
+
+    # Check if the right eye is closed
+    if len(eyes) == 2 and eyes[0][2] < 20 and eyes[1][2] < 20:
+        right_click = True
+    else:
+        right_click = False
+
+    # Move the mouse to the nose position
+    pyautogui.
